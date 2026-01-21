@@ -2,6 +2,14 @@ import pg from 'pg';
 
 const { Pool } = pg;
 
+// Debug: 顯示環境變數狀態
+console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
+console.log('NODE_ENV:', process.env.NODE_ENV);
+
+if (!process.env.DATABASE_URL) {
+  console.error('WARNING: DATABASE_URL is not set!');
+}
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false

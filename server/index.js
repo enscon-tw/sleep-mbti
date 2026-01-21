@@ -98,14 +98,18 @@ app.get('*', (req, res) => {
 
 // 啟動伺服器
 async function start() {
+  // 先啟動伺服器
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+
+  // 然後嘗試連接資料庫（不阻擋伺服器啟動）
   try {
     await initDB();
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-    });
+    console.log('Database connected successfully');
   } catch (error) {
-    console.error('Failed to start server:', error);
-    process.exit(1);
+    console.error('Database connection failed:', error.message);
+    console.error('Server will continue without database features');
   }
 }
 
