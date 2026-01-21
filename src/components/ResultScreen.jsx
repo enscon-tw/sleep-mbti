@@ -1,6 +1,8 @@
 import { useEffect, useState, useRef } from 'react';
+import { copyShareLink, shareToFacebook, shareToLine } from '../utils/shareUtils';
 
 export default function ResultScreen({ result, mbtiType, onRestart, onShare }) {
+  const [isSharing, setIsSharing] = useState(false);
   const [animatedStats, setAnimatedStats] = useState({
     sensitivity: 0,
     imagination: 0,
@@ -148,6 +150,46 @@ export default function ResultScreen({ result, mbtiType, onRestart, onShare }) {
           >
             <span>🎁</span> 儲存結果圖片
           </button>
+
+          {/* 社群分享按鈕 */}
+          <div className="flex gap-3">
+            <button
+              onClick={async () => {
+                setIsSharing(true);
+                await shareToFacebook(mbtiType);
+                setIsSharing(false);
+              }}
+              disabled={isSharing}
+              className="flex-1 bg-[#1877F2] text-white py-3.5 rounded-2xl font-bold text-base hover:bg-[#166FE5] transition font-serif flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              <span>📘</span> Facebook
+            </button>
+            <button
+              onClick={async () => {
+                setIsSharing(true);
+                await shareToLine(mbtiType);
+                setIsSharing(false);
+              }}
+              disabled={isSharing}
+              className="flex-1 bg-[#00B900] text-white py-3.5 rounded-2xl font-bold text-base hover:bg-[#00A000] transition font-serif flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              <span>💬</span> LINE
+            </button>
+          </div>
+
+          {/* 複製連結 */}
+          <button
+            onClick={async () => {
+              setIsSharing(true);
+              await copyShareLink(mbtiType);
+              setIsSharing(false);
+            }}
+            disabled={isSharing}
+            className="w-full bg-slate-100 text-slate-700 py-3.5 rounded-2xl font-bold text-base hover:bg-slate-200 transition font-serif flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            <span>🔗</span> {isSharing ? '處理中...' : '複製分享連結'}
+          </button>
+
           <button
             onClick={onRestart}
             className="w-full bg-white text-ink border-2 border-blue-100 py-3.5 rounded-2xl font-bold text-base hover:bg-blue-50 transition font-serif"
