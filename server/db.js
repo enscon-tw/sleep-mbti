@@ -19,6 +19,7 @@ const pool = new Pool({
 export async function initDB() {
   const client = await pool.connect();
   try {
+    // 舊的 results 表（保留向下相容）
     await client.query(`
       CREATE TABLE IF NOT EXISTS results (
         id VARCHAR(8) PRIMARY KEY,
@@ -26,6 +27,26 @@ export async function initDB() {
         created_at TIMESTAMP DEFAULT NOW()
       )
     `);
+
+    // 新的 generated_results 表（存放 AI 生成的結果）
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS generated_results (
+        id VARCHAR(8) PRIMARY KEY,
+        animal VARCHAR(100) NOT NULL,
+        subtitle VARCHAR(100),
+        icon VARCHAR(10),
+        tags JSONB,
+        stats JSONB,
+        soul_whisper TEXT,
+        night_weight TEXT,
+        sleep_tip TEXT,
+        quote TEXT,
+        image_prompt TEXT,
+        generated_image TEXT,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
     console.log('Database initialized');
   } finally {
     client.release();
@@ -59,6 +80,65 @@ export async function getResult(id) {
     [id]
   );
   return result.rows[0] || null;
+}
+
+// 儲存 AI 生成的結果
+export async function saveGeneratedResult(result) {
+  const id = generateId();
+
+  // 將圖片轉為 base64 字串儲存
+  const imageData = result.generatedImage
+    ? `data:${result.generatedImage.mimeType};base64,${result.generatedImage.data}`
+    : null;
+
+  await pool.query(
+    `INSERT INTO generated_results
+     (id, animal, subtitle, icon, tags, stats, soul_whisper, night_weight, sleep_tip, quote, image_prompt, generated_image)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+    [
+      id,
+      result.animal,
+      result.subtitle,
+      result.icon,
+      JSON.stringify(result.tags),
+      JSON.stringify(result.stats),
+      result.soulWhisper,
+      result.nightWeight,
+      result.sleepTip,
+      result.quote,
+      result.imagePrompt,
+      imageData
+    ]
+  );
+
+  return id;
+}
+
+// 取得 AI 生成的結果
+export async function getGeneratedResult(id) {
+  const result = await pool.query(
+    'SELECT * FROM generated_results WHERE id = $1',
+    [id]
+  );
+
+  if (!result.rows[0]) return null;
+
+  const row = result.rows[0];
+  return {
+    id: row.id,
+    animal: row.animal,
+    subtitle: row.subtitle,
+    icon: row.icon,
+    tags: row.tags,
+    stats: row.stats,
+    soulWhisper: row.soul_whisper,
+    nightWeight: row.night_weight,
+    sleepTip: row.sleep_tip,
+    quote: row.quote,
+    imagePrompt: row.image_prompt,
+    generatedImage: row.generated_image,
+    createdAt: row.created_at
+  };
 }
 
 export default pool;

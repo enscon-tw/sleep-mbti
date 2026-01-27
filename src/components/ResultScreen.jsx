@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { copyShareLink, shareToFacebook, shareToLine } from '../utils/shareUtils';
 
-export default function ResultScreen({ result, mbtiType, onRestart, onShare }) {
+export default function ResultScreen({ result, mbtiType, onRestart, onShare, isGenerated = false }) {
   const [isSharing, setIsSharing] = useState(false);
   const [animatedStats, setAnimatedStats] = useState({
     sensitivity: 0,
@@ -39,12 +39,20 @@ export default function ResultScreen({ result, mbtiType, onRestart, onShare }) {
         </p>
         <h2 className="text-base text-slate-500 mb-4">你的深夜靈魂是...</h2>
 
-        {/* Icon */}
+        {/* Icon / Generated Image */}
         <div className="relative w-48 h-48 mx-auto mb-6">
           <div className="absolute inset-0 bg-blue-50 rounded-full filter blur-2xl opacity-70" />
-          <div className="w-full h-full flex items-center justify-center text-8xl watercolor-illustration relative z-10">
-            {result.icon}
-          </div>
+          {result.generatedImage ? (
+            <img
+              src={result.generatedImage}
+              alt={result.animal}
+              className="w-full h-full object-cover rounded-2xl relative z-10"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-8xl watercolor-illustration relative z-10">
+              {result.icon}
+            </div>
+          )}
         </div>
 
         {/* Title */}
@@ -199,9 +207,11 @@ export default function ResultScreen({ result, mbtiType, onRestart, onShare }) {
         </div>
       </div>
 
-      {/* MBTI Type */}
+      {/* Result ID */}
       <div className="text-center mt-4">
-        <span className="text-xs text-slate-400">{mbtiType}</span>
+        <span className="text-xs text-slate-400">
+          {isGenerated ? `#${mbtiType}` : mbtiType}
+        </span>
       </div>
     </div>
   );

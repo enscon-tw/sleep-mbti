@@ -43,7 +43,7 @@ export default function QuizScreen({ questions, currentStep, onAnswer, onBack })
           {question.options.map((option, index) => (
             <button
               key={index}
-              onClick={() => onAnswer(option.type)}
+              onClick={() => onAnswer(option.type, option.text)}
               className="option-card w-full p-5 text-left text-base text-slate-700 leading-relaxed font-medium"
             >
               {option.text}

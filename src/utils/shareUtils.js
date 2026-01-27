@@ -30,7 +30,7 @@ export async function downloadAsImage(elementRef, filename = 'sleep-mbti-result.
 }
 
 /**
- * 儲存測驗結果到資料庫
+ * 儲存測驗結果到資料庫（舊版 MBTI）
  * @param {string} mbtiType - MBTI 類型
  * @returns {Promise<string|null>} - 分享 ID 或 null
  */
@@ -57,46 +57,64 @@ export async function saveResult(mbtiType) {
 }
 
 /**
- * 複製分享連結到剪貼簿（使用資料庫 ID）
- * @param {string} mbtiType - MBTI 類型
+ * 判斷是否為 AI 生成的結果 ID（8字元）
+ * @param {string} id - ID 或 MBTI 類型
+ * @returns {boolean}
+ */
+function isGeneratedId(id) {
+  return id && id.length === 8 && !/^[EI][NS][TF][JP]$/.test(id);
+}
+
+/**
+ * 複製分享連結到剪貼簿
+ * @param {string} idOrType - 生成的 ID 或 MBTI 類型
  * @returns {Promise<string|null>} - 分享連結或 null
  */
-export async function copyShareLink(mbtiType) {
+export async function copyShareLink(idOrType) {
   try {
-    // 先儲存到資料庫取得 ID
-    const id = await saveResult(mbtiType);
+    let shareUrl;
 
-    if (!id) {
-      // 如果儲存失敗，使用舊的 URL 參數方式
-      const url = `${window.location.origin}${window.location.pathname}?result=${mbtiType}`;
-      await navigator.clipboard.writeText(url);
-      alert('連結已複製到剪貼簿！');
-      return url;
+    if (isGeneratedId(idOrType)) {
+      // AI 生成的結果，直接使用 ID
+      shareUrl = `${window.location.origin}/share/${idOrType}`;
+    } else {
+      // 舊版 MBTI 結果，需要先儲存
+      const id = await saveResult(idOrType);
+      if (id) {
+        shareUrl = `${window.location.origin}/share/${id}`;
+      } else {
+        shareUrl = `${window.location.origin}${window.location.pathname}?result=${idOrType}`;
+      }
     }
 
-    // 使用新的分享連結格式
-    const url = `${window.location.origin}/share/${id}`;
-    await navigator.clipboard.writeText(url);
+    await navigator.clipboard.writeText(shareUrl);
     alert('連結已複製到剪貼簿！\n分享此連結，朋友可以看到你的測驗結果預覽。');
-    return url;
+    return shareUrl;
   } catch (error) {
     console.error('Failed to copy link:', error);
-    // Fallback
-    const url = `${window.location.origin}${window.location.pathname}?result=${mbtiType}`;
-    prompt('請複製以下連結：', url);
+    const fallbackUrl = isGeneratedId(idOrType)
+      ? `${window.location.origin}/share/${idOrType}`
+      : `${window.location.origin}${window.location.pathname}?result=${idOrType}`;
+    prompt('請複製以下連結：', fallbackUrl);
     return null;
   }
 }
 
 /**
  * 分享到 Facebook
- * @param {string} mbtiType - MBTI 類型
+ * @param {string} idOrType - 生成的 ID 或 MBTI 類型
  */
-export async function shareToFacebook(mbtiType) {
-  const id = await saveResult(mbtiType);
-  const shareUrl = id
-    ? `${window.location.origin}/share/${id}`
-    : `${window.location.origin}${window.location.pathname}?result=${mbtiType}`;
+export async function shareToFacebook(idOrType) {
+  let shareUrl;
+
+  if (isGeneratedId(idOrType)) {
+    shareUrl = `${window.location.origin}/share/${idOrType}`;
+  } else {
+    const id = await saveResult(idOrType);
+    shareUrl = id
+      ? `${window.location.origin}/share/${id}`
+      : `${window.location.origin}${window.location.pathname}?result=${idOrType}`;
+  }
 
   window.open(
     `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`,
@@ -107,13 +125,19 @@ export async function shareToFacebook(mbtiType) {
 
 /**
  * 分享到 LINE
- * @param {string} mbtiType - MBTI 類型
+ * @param {string} idOrType - 生成的 ID 或 MBTI 類型
  */
-export async function shareToLine(mbtiType) {
-  const id = await saveResult(mbtiType);
-  const shareUrl = id
-    ? `${window.location.origin}/share/${id}`
-    : `${window.location.origin}${window.location.pathname}?result=${mbtiType}`;
+export async function shareToLine(idOrType) {
+  let shareUrl;
+
+  if (isGeneratedId(idOrType)) {
+    shareUrl = `${window.location.origin}/share/${idOrType}`;
+  } else {
+    const id = await saveResult(idOrType);
+    shareUrl = id
+      ? `${window.location.origin}/share/${id}`
+      : `${window.location.origin}${window.location.pathname}?result=${idOrType}`;
+  }
 
   window.open(
     `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(shareUrl)}`,
