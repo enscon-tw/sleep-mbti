@@ -1,6 +1,6 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 // 文案生成的 prompt
 const TEXT_SYSTEM_PROMPT = `你是一位擅長洞察人性的海洋生物學家，說話風格幽默、一針見血，但最後總會給予溫暖的支持。
@@ -34,8 +34,6 @@ const TEXT_SYSTEM_PROMPT = `你是一位擅長洞察人性的海洋生物學家�
 
 // 生成文案
 export async function generateContent(answers) {
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-
   const answersText = answers.map((a, i) => `問題${i + 1}: ${a}`).join('\n');
 
   const prompt = `${TEXT_SYSTEM_PROMPT}
@@ -46,9 +44,12 @@ ${answersText}
 請根據這些回答，創造一個獨特的海洋生物分身。只輸出 JSON，不要有其他文字。`;
 
   try {
-    const result = await model.generateContent(prompt);
-    const response = result.response;
-    const text = response.text();
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.0-flash',
+      contents: prompt,
+    });
+
+    const text = response.candidates[0].content.parts[0].text;
 
     // 解析 JSON
     const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -65,8 +66,6 @@ ${answersText}
 
 // 生成圖片
 export async function generateImage(imagePrompt) {
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-image' });
-
   const stylePrompt = `Create an illustration of: ${imagePrompt}
 
 Style: crayon drawing style, colored pencil texture, child's drawing, naive art, hand-drawn illustration, rough black outlines, waxy texture, imperfect coloring, flat colors, simple shapes, cute, minimalist off-white paper background.
@@ -74,19 +73,21 @@ Style: crayon drawing style, colored pencil texture, child's drawing, naive art,
 The creature should look friendly and relatable, with a slightly tired or modern-life-stressed expression that's still endearing.`;
 
   try {
-    const result = await model.generateContent({
-      contents: [{ role: 'user', parts: [{ text: stylePrompt }] }],
-      generationConfig: {
-        responseModalities: ['image', 'text'],
-      },
+    console.log('Generating image with prompt:', stylePrompt);
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash-image',
+      contents: stylePrompt,
     });
 
-    const response = result.response;
+    console.log('Image generation response:', JSON.stringify(response, null, 2));
+
     const parts = response.candidates[0].content.parts;
 
     // 找到圖片部分
     for (const part of parts) {
       if (part.inlineData) {
+        console.log('Found image data, mimeType:', part.inlineData.mimeType);
         return {
           mimeType: part.inlineData.mimeType,
           data: part.inlineData.data // base64 encoded
@@ -94,9 +95,9 @@ The creature should look friendly and relatable, with a slightly tired or modern
       }
     }
 
-    throw new Error('No image generated');
+    throw new Error('No image in response');
   } catch (error) {
-    console.error('Gemini image generation error:', error);
+    console.error('Gemini image generation error:', error.message || error);
     throw error;
   }
 }
@@ -105,13 +106,15 @@ The creature should look friendly and relatable, with a slightly tired or modern
 export async function generateResult(answers) {
   // 1. 生成文案
   const content = await generateContent(answers);
+  console.log('Generated content:', content.animal);
 
   // 2. 生成圖片
   let image = null;
   try {
     image = await generateImage(content.imagePrompt);
+    console.log('Image generated successfully');
   } catch (error) {
-    console.error('Image generation failed, using emoji fallback');
+    console.error('Image generation failed, using emoji fallback:', error.message);
   }
 
   return {
