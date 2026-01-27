@@ -21,9 +21,15 @@ router.post('/', async (req, res) => {
     // 儲存到資料庫
     const id = await saveGeneratedResult(result);
 
+    // 將圖片轉為 data URL 格式給前端
+    const generatedImage = result.generatedImage
+      ? `data:${result.generatedImage.mimeType};base64,${result.generatedImage.data}`
+      : null;
+
     res.json({
       id,
-      ...result
+      ...result,
+      generatedImage
     });
   } catch (error) {
     console.error('Generation error:', error);
