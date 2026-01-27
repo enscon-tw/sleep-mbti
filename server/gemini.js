@@ -65,7 +65,7 @@ ${answersText}
 
 // 生成圖片
 export async function generateImage(imagePrompt) {
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash-exp-image-generation' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-image' });
 
   const stylePrompt = `Create an illustration of: ${imagePrompt}
 
