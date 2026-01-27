@@ -86,8 +86,10 @@ The creature should look friendly and relatable, with a slightly tired or modern
 
     // 找到圖片部分
     for (const part of parts) {
+      console.log('Part keys:', Object.keys(part));
       if (part.inlineData) {
         console.log('Found image data, mimeType:', part.inlineData.mimeType);
+        console.log('Image data length:', part.inlineData.data?.length || 0);
         return {
           mimeType: part.inlineData.mimeType,
           data: part.inlineData.data // base64 encoded
@@ -95,6 +97,7 @@ The creature should look friendly and relatable, with a slightly tired or modern
       }
     }
 
+    console.log('No inlineData found in parts:', JSON.stringify(parts.map(p => Object.keys(p))))
     throw new Error('No image in response');
   } catch (error) {
     console.error('Gemini image generation error:', error.message || error);

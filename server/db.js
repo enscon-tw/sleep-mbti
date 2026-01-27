@@ -87,9 +87,17 @@ export async function saveGeneratedResult(result) {
   const id = generateId();
 
   // 將圖片轉為 base64 字串儲存
+  console.log('saveGeneratedResult - generatedImage exists:', !!result.generatedImage);
+  if (result.generatedImage) {
+    console.log('generatedImage mimeType:', result.generatedImage.mimeType);
+    console.log('generatedImage data length:', result.generatedImage.data?.length || 0);
+  }
+
   const imageData = result.generatedImage
     ? `data:${result.generatedImage.mimeType};base64,${result.generatedImage.data}`
     : null;
+
+  console.log('imageData length:', imageData?.length || 0);
 
   await pool.query(
     `INSERT INTO generated_results
